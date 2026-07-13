@@ -52,7 +52,16 @@ func CheckHandler(svc checker) http.Handler {
 	})
 }
 
-// NewMux собирает маршрутизацию: /healthz открыт, /api/check под токеном,
+// AuthHandler подтверждает валидность токена: сам по себе ничего не делает,
+// доступ до него уже отфильтрован RequireToken. Используется страницей входа.
+func AuthHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	})
+}
+
+// NewMux собирает маршрутизацию: /healthz открыт, /api/* под токеном,
 // всё остальное — статика SPA.
 func NewMux(token string, svc checker) http.Handler {
 	mux := http.NewServeMux()
@@ -60,6 +69,7 @@ func NewMux(token string, svc checker) http.Handler {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
+	mux.Handle("/api/auth", RequireToken(token, AuthHandler()))
 	mux.Handle("/api/check", RequireToken(token, CheckHandler(svc)))
 	mux.Handle("/", StaticHandler())
 	return mux

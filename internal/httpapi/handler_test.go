@@ -51,3 +51,24 @@ func TestCheckHandlerRejectsGet(t *testing.T) {
 		t.Fatalf("got %d, want 405", rr.Code)
 	}
 }
+
+func TestNewMuxAuthRoute(t *testing.T) {
+	mux := NewMux("secret", fakeChecker{})
+
+	// без токена — 401
+	req := httptest.NewRequest(http.MethodGet, "/api/auth", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("no token: got %d, want 401", rr.Code)
+	}
+
+	// с токеном — 200
+	req = httptest.NewRequest(http.MethodGet, "/api/auth", nil)
+	req.Header.Set("Authorization", "Bearer secret")
+	rr = httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("with token: got %d, want 200", rr.Code)
+	}
+}

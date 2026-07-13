@@ -7,6 +7,17 @@ export type Result = {
   detail: string
 }
 
+// verifyToken проверяет токен через /api/auth. true — токен принят,
+// false — отклонён (401). Прочие ошибки пробрасываются.
+export async function verifyToken(token: string): Promise<boolean> {
+  const resp = await fetch('/api/auth', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (resp.status === 401) return false
+  if (!resp.ok) throw new Error(`Ошибка сервера: ${resp.status}`)
+  return true
+}
+
 export async function checkKeys(token: string, keys: string[]): Promise<Result[]> {
   const resp = await fetch('/api/check', {
     method: 'POST',
