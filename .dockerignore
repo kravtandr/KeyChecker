@@ -1,0 +1,5 @@
+web/node_modules
+web/dist
+internal/httpapi/webdist
+.git
+keychecker
