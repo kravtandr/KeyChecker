@@ -4,3 +4,4 @@
 /internal/httpapi/webdist/*
 !/internal/httpapi/webdist/index.html
 /tmp
+.env

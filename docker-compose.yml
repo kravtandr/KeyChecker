@@ -1,0 +1,16 @@
+services:
+  keychecker:
+    build: .
+    image: keychecker
+    ports:
+      - "${KEYCHECKER_PORT:-8080}:8080"
+    environment:
+      # Обязателен: без токена сервис не стартует (fail-closed).
+      KEYCHECKER_TOKEN: ${KEYCHECKER_TOKEN:?set KEYCHECKER_TOKEN in .env}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/keychecker", "-healthcheck"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
