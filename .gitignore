@@ -1,0 +1,6 @@
+/keychecker
+/web/node_modules
+/web/dist
+/internal/httpapi/webdist/*
+!/internal/httpapi/webdist/index.html
+/tmp
