@@ -9,12 +9,16 @@ import (
 
 func TestFalValid(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/tokens/" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 		if r.Header.Get("Authorization") != "Key id:secret" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{}`))
+		_, _ = w.Write([]byte(`"a.jwt.token"`))
 	}))
 	defer ts.Close()
 
@@ -27,6 +31,42 @@ func TestFalValid(t *testing.T) {
 	}
 	if !res.Valid || res.Provider != "fal" {
 		t.Fatalf("expected valid fal, got %+v", res)
+	}
+}
+
+func TestFalInvalid(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"detail":"No user found for Key ID and Secret"}`))
+	}))
+	defer ts.Close()
+
+	p := NewFal()
+	p.baseURL = ts.URL
+
+	res, _ := p.Check(context.Background(), "bad-id:bad-secret")
+	if res.Valid {
+		t.Fatalf("expected invalid, got %+v", res)
+	}
+}
+
+func TestFalAuthPassedBadBody(t *testing.T) {
+	// Валидный ключ, но тело отклонено (422) — ключ всё равно считается валидным.
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Key id:secret" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(http.StatusUnprocessableEntity)
+	}))
+	defer ts.Close()
+
+	p := NewFal()
+	p.baseURL = ts.URL
+
+	res, _ := p.Check(context.Background(), "id:secret")
+	if !res.Valid {
+		t.Fatalf("expected valid (auth passed), got %+v", res)
 	}
 }
 
